@@ -1,5 +1,10 @@
 # demo
 
+## 注意
+项目包含子模块，拉取代码时带上参数`--recursive`
+
+$ git clone --recursive [url]
+
 ## Project setup
 ```
 npm install
