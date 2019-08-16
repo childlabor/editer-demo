@@ -203,7 +203,7 @@ export default {
       this.componentsRender.forEach(item => {
         this.$set(item, 'comps',
           function(resolve) {
-            require([`../components/labs/${item.name}.vue`], resolve)
+            require([`../assets/demo_h5_lib/src/components/labs/${item.name}.vue`], resolve)
           }
         )
         // console.log(item);

@@ -1,0 +1,3 @@
+[submodule "src/assets/demo_h5_lib"]
+	path = src/assets/demo_h5_lib
+	url = git@gogs.feibo.cc:tongwenwei/demo_h5_lib.git
