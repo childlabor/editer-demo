@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "core-js": "^2.6.5",
+    "dayjs": "^1.8.15",
+    "moment": "^2.24.0",
     "normalize.css": "^8.0.1",
     "pixi.js": "^5.1.0",
     "sortable": "^2.0.0",

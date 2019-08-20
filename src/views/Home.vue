@@ -1,64 +1,48 @@
 <template>
   <div class="home">
-    <!-- 组件区 -->
-    <div class="left">
-      组件
-      <div class="list">
-        <draggable
-          class="list-group"
-          :list="componentsList"
-          :sort="false"
-          :group="{ name: 'people', pull: 'clone', put: false }"
-          :clone="onClone"
-          @change="onChange">
-          <div
-            class="list-group-item li"
-            v-for="element in componentsList"
-            :key="element.name"
+    <div class="edit-box">
+      <!-- 组件区 -->
+      <div class="left">
+        组件
+        <div class="list">
+          <draggable
+            class="list-group"
+            :list="componentsList"
+            :sort="false"
+            :group="{ name: 'g1', pull: 'clone', put: false }"
+            :clone="onClone"
           >
-            {{ element.name }}
-          </div>
-        </draggable>
-      </div>
-    </div>
-    <!-- 视窗区 -->
-    <div class="center">
-      视窗
-        <!-- group要一致 -->
-        <draggable
-          class="list-group"
-          v-bind="dragOptions"
-          :list="componentsRender"
-          group="people"
-          @change="onChange"
-          @add="onAdd"
-          @choose="onChoose">
-          <transition-group type="transition" :name="!drag ? 'flip-list' : null">
             <div
-              class="list-group-item li view-li"
-              v-for="(element, index) in componentsRender"
-              :key="`${index}+1`"
+              class="list-group-item li"
+              v-for="element in componentsList"
+              :key="element.name"
             >
-              <i class="close" @click="handleClose"> X </i>
-              <component v-if="isComps(element.name)" :is="element.comps" :options="element.property" :isEdit="true"></component>
-              <span v-else>{{ element.name }}</span>
+              {{ element.name }}
             </div>
-          </transition-group>
-      </draggable>
-    </div>
-    <!-- 配置区 -->
-    <div class="right">
-      配置
-      <div
-        class="list-group-item li"
-        v-for="(element, index) in activeComponentsOptions"
-        :key="index"
-      >
-        <component
-          :is="element.comps"
-          :value="element.value"
-          :renderId="element.renderId"
-          @propertyChange="onPropertyChange"></component>
+          </draggable>
+        </div>
+      </div>
+      <!-- 视窗区 -->
+      <div class="center">
+        视窗
+        <!-- 多重嵌套 -->
+        <nested-draggable
+          :componentsRenderData="componentsRender" />
+      </div>
+      <!-- 配置区 -->
+      <div class="right">
+        配置
+        <div
+          class="list-group-item li"
+          v-for="(element, index) in activeComponentsOptions"
+          :key="index"
+        >
+          <component
+            :is="element.comps"
+            :value="element.value"
+            :renderId="element.renderId"
+            @propertyChange="onPropertyChange" />
+        </div>
       </div>
     </div>
   </div>
@@ -67,21 +51,25 @@
 <script>
 // @ is an alias to /src
 import draggable from 'vuedraggable';
-let idGlobal = 8;
+import nestedDraggable from "../components/draggable/NestedDraggable";
+import { mapState, mapMutations } from 'vuex';
+
 export default {
   name: "home",
   components: {
     draggable,
+    nestedDraggable
   },
 
   data() {
     return {
       drag: false,
+      group: {
+        name: 'g1'
+      },
       activeComps: null, // 当前移动组件
       activeCompsIndex: null, // 当前移动组件层级
-      activeComponentsOptions: [], // 当前移动组件的配置信息
       activeCompsRenderId: null, // 当前配置组件的渲染id
-      allComponentsList: ['TopTitle', 'HelloWorld', 'Title', 'other1', 'other2'], // 组件库信息数据遍历取name 固定数据
       componentsList: [ // 组件区  组件库信息数据截取 固定数据
         {
           name: "HelloWorld",
@@ -91,7 +79,9 @@ export default {
             styleObject: {
               background: '#fff',
             }
-          }
+          },
+          // 有此字段的内部才能嵌套子组件
+          childs: []
         },
         {
           name: "Title",
@@ -124,38 +114,78 @@ export default {
               background: '#f2f2f2',
               padding: '10px'
             }
-          }
-        }
+          },
+          childs: [
+            {
+              renderId: '1',
+              name: "Title",
+              id: 2,
+              property: {
+                msg: '标题改',
+                styleObject: {
+                  color: 'red',
+                  fontSize: '14px'
+                }
+              },
+              childs: [
+                {
+                  renderId: '2',
+                  name: "Title",
+                  id: 2,
+                  property: {
+                    msg: '标题改2',
+                    styleObject: {
+                      color: 'red',
+                      fontSize: '14px'
+                    }
+                  },
+                  childs: []
+                },
+              ]
+            },
+          ]
+        },
       ]
     }
   },
 
   computed: {
-    dragOptions() {
-      return {
-        animation: 200,
-        group: "description",
-        disabled: false,
-        ghostClass: "ghost",
-      };
-    }
+    ...mapState([
+      'isChange',
+      'renderData',
+      'activeRenderData',
+      'activeComponentsOptions'
+    ]),
+  },
+
+  watch: {
+    // 布局变化
+    isChange(newValue) {
+      if(newValue) {
+        this.cacheComponentsRender(this.componentsRender);
+      }
+    },
+
+    // 目标（当前组件渲染数据）变化
+    activeRenderData(newValue) {
+      // console.log('active',newValue);
+      this.onActiveComponentsOptions(newValue)
+    },
+
   },
 
   created () {
-    this.requireComps();
+    this.requireComps(this.componentsRender);
+    this.cacheComponentsRender(this.componentsRender);
   },
 
   methods: {
-    onChange(evt) {
-      // console.log(evt);
-    },
-
-    // 视窗区-监听拖拽内容增加
-    onAdd(evt) {
-      // 处理数据渲染配置项
-      this.onActiveComponentsOptions(evt.newIndex);
-      this.requireComps()
-    },
+    ...mapMutations([
+      'cacheComponentsRender',
+      'stateChange',
+      'matchTargetData',
+      'setActiveComponentsOptions'
+    ]),
 
     // 拖拽复制回调 custom clone
     onClone(evt) {
@@ -163,54 +193,56 @@ export default {
       // 深拷贝 否则同一组件指向相同，赋予的值永远为最后一次的赋值
       let cloneComps = JSON.parse(JSON.stringify(evt))
       Object.assign(cloneComps, {
-        renderId: `${new Date().getTime()}`
+        renderId: `${new Date().getTime()}`,
+        comps: function(resolve) {
+          require([`../assets/demo_h5_lib/src/components/labs/${evt.name}.vue`], resolve)
+        }
       })
       return cloneComps
     },
 
-    // 选中
-    onChoose(evt) {
-      // console.log('chose', evt, this.componentsRender[evt.oldIndex].renderId);
-      this.activeCompsIndex = evt.oldIndex;
-      this.onActiveComponentsOptions(evt.oldIndex);
-    },
-
-    // 计算当前组件有的配置项
-    onActiveComponentsOptions(index) {
-      // 处理数据渲染配置项
+    // 处理数据渲染组件配置项
+    onActiveComponentsOptions(item) {
       // 初始 清空配置项
-      this.activeComponentsOptions = [];
-      let catchActiveComps = this.activeComps = this.componentsRender[index];
+      this.setActiveComponentsOptions([]);
+      this.activeComps = item;
       // 记录当前操作组件渲染id
-      this.activeCompsRenderId = catchActiveComps.renderId;
-      if(catchActiveComps.property) {
-        let activeCompsObj = catchActiveComps.property.styleObject || '';
+      this.activeCompsRenderId = item.renderId;
+      if(item.property) {
+        let activeCompsObj = item.property.styleObject || '';
         // 将单样式键值对展开，方便独立渲染 样式配置组件
         for (let [key, val] of Object.entries(activeCompsObj)) {
           let optionsItem = {
             name: key,
             value: val
           }
-          this.activeComponentsOptions.push(optionsItem)
+          this.setActiveComponentsOptions(optionsItem);
         }
-
+        // 注册配置项组件
         this.requireOptionsComps();
       }
     },
 
     // 动态加载组件-视窗
-    requireComps() {
-      this.componentsRender.forEach(item => {
-        this.$set(item, 'comps',
-          function(resolve) {
-            require([`../assets/demo_h5_lib/src/components/labs/${item.name}.vue`], resolve)
-          }
-        )
+    requireComps(renderObj) {
+      renderObj.forEach(item => {
+        // 存在组件名则动态加载组件
+        if(item.name) {
+          this.$set(item, 'comps',
+            function(resolve) {
+              require([`../assets/demo_h5_lib/src/components/labs/${item.name}.vue`], resolve)
+            }
+          )
+        }
+        // 存在嵌套 递归
+        if(item.childs) {
+          this.requireComps(item.childs);
+        }
         // console.log(item);
       })
     },
 
-    // 动态加载组件-配置区
+    // 动态注册加载组件-配置区
     requireOptionsComps() {
       this.activeComponentsOptions.forEach(item => {
         this.$set(item, 'comps',
@@ -222,36 +254,24 @@ export default {
       })
     },
 
-    // 匹配是否有该组件
-    isComps(val) {
-      for (let item of this.allComponentsList) {
-        if (val === item) {
-          return true
-          break; // 匹配到后立马跳出 减少计算
-        }
-      }
-    },
-
     // 配置值修改双向绑定 传递
-    onPropertyChange(obj) {
-      for (let item of this.componentsRender) {
-        if (this.activeComps.name === item.name && this.activeCompsRenderId === item.renderId) {
+    onPropertyChange(data, obj=this.componentsRender) {
+      for (let item of obj) {
+        if (this.activeComps.name === item.name && this.activeComps.renderId === item.renderId) {
           // 处理数据
           let styleObject = item.property.styleObject;
           // 覆盖
-          Object.assign(styleObject, obj);
+          Object.assign(styleObject, data);
           break;
+        } else if(item.childs) {
+          this.onPropertyChange(data, item.childs);
         }
       }
     },
 
-    // 删除组件
-    handleClose() {
-      // console.log('delete');
-      this.componentsRender.splice(this.activeCompsIndex, 1);
-      // 初始 清空配置项
-      this.activeComponentsOptions = [];
-    },
+    logData() {
+      console.log('提交数据', JSON.stringify(this.componentsRender))
+    }
 
   }
 };
@@ -264,13 +284,14 @@ export default {
 .no-move {
   transition: transform 0s;
 }
-.home {
+.edit-box {
   display: flex;
   height: 80vh;
   .center {
     flex: 2;
     border: 1px solid skyblue;
     height: 100%;
+    padding-bottom: 50px;
     box-sizing: border-box;
     overflow-y: scroll;
   }

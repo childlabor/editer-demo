@@ -1,9 +1,14 @@
 # demo
 
 ## 注意
-项目包含子模块，拉取代码时带上参数`--recursive`
+- 项目包含子模块，拉取代码时带上参数`--recursive`
 
+```
 $ git clone --recursive [url]
+```
+
+- 本地预览 请先运行[demo_H5_lib](http://gogs.feibo.cc/tongwenwei/demo_h5_lib)项目（也就是子模块），并根据实际修改views/Preview.vue的`src`
+
 
 ## Project setup
 ```
