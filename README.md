@@ -7,7 +7,7 @@
 $ git clone --recursive [url]
 ```
 
-- 本地预览 请先运行[demo_H5_lib](http://gogs.feibo.cc/tongwenwei/demo_h5_lib)项目（也就是子模块），并根据实际修改views/Preview.vue的`src`
+- 本地预览 请先运行[demo_H5_lib](https://github.com/childlabor/demo_h5_lib)项目（也就是子模块），并根据实际修改views/Preview.vue的`src`
 
 
 ## Project setup
